@@ -1,0 +1,25 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    env_file:
+      - .env
+    healthcheck:
+      test: "wget -qO- https://check.airservers.org/api/ || exit 1"
+      interval: 10s
+      timeout: 10s
+      retries: 5
+  jmusicbot:
+    build: .
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    volumes:
+      - ./config.txt:/app/config.txt
+      - ./serversettings.json:/app/serversettings.json
+      - ./data:/app/data
+    entrypoint: ["sh", "-c", "sleep 10 && java -Dnogui=true -jar JMusicBot-Snapshot-All.jar"]  # workaround for https://github.com/containers/podman-compose/issues/866
